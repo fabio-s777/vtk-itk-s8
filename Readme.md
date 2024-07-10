@@ -13,7 +13,7 @@ Ce projet vise à suivre les changements d'une tumeur à partir de deux scans ef
 
 ## utilisation
 
-**debug** permet d'afficher les 2 d'inputs
+**debug** permet d'afficher les 2 inputs
 **main** permet de calculer et d'afficher l'évolution de la tumeur
 
 ## Algorithmes Utilisés
@@ -33,7 +33,7 @@ Ce projet vise à suivre les changements d'une tumeur à partir de deux scans ef
   - Choix d'une transformation rigide (rotation et translation) car les variations entre les scans sont principalement de ce type.
   
 - **Recalage par descente de gradient :**
-  - Utilisation de `itk.ImageRegistrationMethodv4` avec un optimiseur de gradient de descente régulier (`itk.RegularStepGradientDescentOptimizerv4`).
+  - Utilisation de `itk.ImageRegistrationMethodv4` avec un optimiseur de descente de gradient régulier (`itk.RegularStepGradientDescentOptimizerv4`).
   - La métrique utilisée est `itk.MeanSquaresImageToImageMetricv4`, qui mesure les différences en intensité entre les images alignées.
 
 **Paramètres Clés :**
