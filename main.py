@@ -4,34 +4,34 @@ from vtk.util import numpy_support
 import numpy as np
 
 def load_scan(file_path):
-    """Load a scan using ITK."""
     image = itk.imread(file_path, itk.F)
     return image
 
 def register_images(fixed_image, moving_image):
-    """Register two images using ITK."""
     Dimension = 3
 
-    # Types definition
     FixedImageType = itk.Image[itk.F, Dimension]
     MovingImageType = itk.Image[itk.F, Dimension]
+
     TransformType = itk.VersorRigid3DTransform[itk.D]
+
     OptimizerType = itk.RegularStepGradientDescentOptimizerv4[itk.D]
+
     MetricType = itk.MeanSquaresImageToImageMetricv4[FixedImageType, MovingImageType]
+
     RegistrationType = itk.ImageRegistrationMethodv4[FixedImageType, MovingImageType]
 
-    # Create components
     transform = TransformType.New()
     optimizer = OptimizerType.New()
+
     metric = MetricType.New()
+
     registration = RegistrationType.New()
 
-    # Initialize transform
-    initializer = itk.CenteredTransformInitializer[TransformType, FixedImageType, MovingImageType].New(
-        Transform=transform, FixedImage=fixed_image, MovingImage=moving_image)
+    initializer = itk.CenteredTransformInitializer[TransformType, FixedImageType, MovingImageType].New(Transform=transform, FixedImage=fixed_image, MovingImage=moving_image)
+
     initializer.InitializeTransform()
 
-    # Set up registration components
     registration.SetFixedImage(fixed_image)
     registration.SetMovingImage(moving_image)
     registration.SetMetric(metric)
@@ -43,21 +43,21 @@ def register_images(fixed_image, moving_image):
     resampler = itk.ResampleImageFilter.New(Input=moving_image, Transform=registration.GetTransform(), UseReferenceImage=True, ReferenceImage=fixed_image)
     resampler.SetDefaultPixelValue(0)
     resampler.Update()
+
     registered_image = resampler.GetOutput()
+    
     return registered_image
 
 def segment_tumor(image):
-    """Segment the tumor in the image using ITK."""
-    # Ensure the image contains valid pixel values
     image_array = itk.GetArrayViewFromImage(image)
+
     if np.all(image_array == image_array.flat[0]):
         raise ValueError("Image contains uniform pixel values. Segmentation cannot be performed.")
-
+    
     otsu_filter = itk.OtsuThresholdImageFilter.New(Input=image)
     otsu_filter.Update()
     threshold_value = otsu_filter.GetThreshold()
 
-    # Apply binary thresholding
     binary_threshold = itk.BinaryThresholdImageFilter.New(Input=image)
     binary_threshold.SetLowerThreshold(threshold_value)
     binary_threshold.SetUpperThreshold(itk.NumericTraits[itk.F].max())
@@ -66,31 +66,32 @@ def segment_tumor(image):
     binary_threshold.Update()
 
     segmented_image = binary_threshold.GetOutput()
+
     return segmented_image
 
 def visualize_changes(image1, image2):
-    """Visualize changes between two images using VTK."""
     subtract_filter = itk.SubtractImageFilter.New(Input1=image1, Input2=image2)
     subtract_filter.Update()
+
     abs_filter = itk.AbsImageFilter.New(Input=subtract_filter.GetOutput())
     abs_filter.Update()
+
     diff = abs_filter.GetOutput()
-    
     diff_np = itk.GetArrayFromImage(diff)
-    
-    # Convert to VTK image
+
     dims = diff.GetLargestPossibleRegion().GetSize()
+
     vtk_image_data = vtk.vtkImageData()
     vtk_image_data.SetDimensions(dims[0], dims[1], dims[2])
     vtk_image_data.AllocateScalars(vtk.VTK_FLOAT, 1)
-    
-    # Copy numpy array data into VTK image
+
     vtk_data_array = numpy_support.numpy_to_vtk(num_array=diff_np.ravel(), deep=True, array_type=vtk.VTK_FLOAT)
+
     vtk_image_data.GetPointData().SetScalars(vtk_data_array)
 
-    # Create VTK rendering pipeline
     mapper = vtk.vtkDataSetMapper()
     mapper.SetInputData(vtk_image_data)
+
     actor = vtk.vtkActor()
     actor.SetMapper(mapper)
 
@@ -99,27 +100,23 @@ def visualize_changes(image1, image2):
     render_window.AddRenderer(renderer)
     render_window_interactor = vtk.vtkRenderWindowInteractor()
     render_window_interactor.SetRenderWindow(render_window)
-
     renderer.AddActor(actor)
     renderer.SetBackground(1, 1, 1)
     render_window.Render()
     render_window_interactor.Start()
 
 def main():
-    # Load scans
     scan1_path = 'Data/case6_gre1.nrrd'
     scan2_path = 'Data/case6_gre2.nrrd'
+
     scan1 = load_scan(scan1_path)
     scan2 = load_scan(scan2_path)
-    
-    # Register scans
+
     registered_scan2 = register_images(scan1, scan2)
-    
-    # Segment tumors
+
     segmented_tumor1 = segment_tumor(scan1)
     segmented_tumor2 = segment_tumor(registered_scan2)
-    
-    # Visualize changes
+
     visualize_changes(segmented_tumor1, segmented_tumor2)
 
 if __name__ == "__main__":
