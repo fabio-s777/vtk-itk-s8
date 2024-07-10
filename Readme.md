@@ -32,7 +32,7 @@ Ce projet vise à suivre les changements d'une tumeur à partir de deux scans ef
   - Utilisation de `itk.CenteredTransformInitializer` pour aligner approximativement les images.
   - Choix d'une transformation rigide (rotation et translation) car les variations entre les scans sont principalement de ce type.
   
-- **Recalage par gradient de descente :**
+- **Recalage par descente de gradient :**
   - Utilisation de `itk.ImageRegistrationMethodv4` avec un optimiseur de gradient de descente régulier (`itk.RegularStepGradientDescentOptimizerv4`).
   - La métrique utilisée est `itk.MeanSquaresImageToImageMetricv4`, qui mesure les différences en intensité entre les images alignées.
 
